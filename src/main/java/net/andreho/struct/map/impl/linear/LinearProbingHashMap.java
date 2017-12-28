@@ -5,7 +5,8 @@ import net.andreho.struct.map.ImmutableMap;
 import net.andreho.struct.map.MutableEntry;
 import net.andreho.struct.map.abstr.AbstractMutableMap;
 import net.andreho.struct.set.MutableSet;
-import net.andreho.struct.set.impl.MutableMapBackedSet;
+import net.andreho.struct.map.impl.MutableMapBackedEntrySet;
+import net.andreho.struct.map.impl.MutableMapBackedSet;
 import net.andreho.utils.ArrayUtils.Constants;
 import net.andreho.utils.MathUtils;
 
@@ -201,8 +202,6 @@ public class LinearProbingHashMap<K, V> extends AbstractMutableMap<K, V> {
       return -1;
    }
 
-   //----------------------------------------------------------------------------------------------------------------
-
    protected void initialize(final int[] hashes,
                              final int defaultEmptyHash) {
       if (defaultEmptyHash != 0) {
@@ -210,19 +209,15 @@ public class LinearProbingHashMap<K, V> extends AbstractMutableMap<K, V> {
       }
    }
 
-   //-----------------------------------------------------------------------------------------------------------------
-
    @Override
    public int hashCode(K key) {
       return key.hashCode();
    }
 
    @Override
-   public boolean equal(K a, K b) {
-      return a.equals(b);
+   public boolean equal(K firstKey, K secondKey) {
+      return firstKey.equals(secondKey);
    }
-
-   //-----------------------------------------------------------------------------------------------------------------
 
    private int nextCapacity(int cap) {
       return cap << 1;
@@ -336,15 +331,13 @@ public class LinearProbingHashMap<K, V> extends AbstractMutableMap<K, V> {
       this.hashes = newHashes;
    }
 
-   //----------------------------------------------------------------------------------------------------------------
-
    /**
     * Rehash process includes following steps:
     * <ul>
-    * <li>removing of all tombstones</li>
+    * <li>removal of all tombstones</li>
     * <li>iteratively reinsertion of all key-value pairs</li>
     * <li>validation that all reinserted pairs are reachable</li>
-    * <li>reset of deleted counter</li>
+    * <li>reset of the deleted counter</li>
     * </ul>
     */
    private void rehash() {
@@ -445,8 +438,6 @@ public class LinearProbingHashMap<K, V> extends AbstractMutableMap<K, V> {
       this.deleted = 0;
    }
 
-   //----------------------------------------------------------------------------------------------------------------
-
    @Override
    @SuppressWarnings("Duplicates")
    public boolean reserve(int capacity) {
@@ -454,13 +445,10 @@ public class LinearProbingHashMap<K, V> extends AbstractMutableMap<K, V> {
 
       if (capacity > this.hashes.length) {
          int next = nextCapacity();
-
          while (next < capacity) {
             next = nextCapacity(next);
          }
-
          resize(next);
-
          return true;
       }
       return false;
@@ -607,11 +595,11 @@ public class LinearProbingHashMap<K, V> extends AbstractMutableMap<K, V> {
 
    @Override
    public Set<Entry<K, V>> entrySet() {
-      throw new IllegalStateException("Not implemented");
+      return (Set) new MutableMapBackedEntrySet<>(this);
    }
 
    @Override
    public Iterable<MutableEntry<K, V>> entryView() {
-      return new LinearProbingMapEntryViewIterable<>(this, false);
+      return new LinearProbingMapEntryViewIterable<>(this, true);
    }
 }

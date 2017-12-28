@@ -28,7 +28,7 @@ public class LinearProbingHashMapTest {
    private List<Integer> keys = new ArrayList<>();
    private Map<Integer, Integer> map =
 //         new HashMap<>();
-         MutableMap.<Integer, Integer>createDefault().toMap();
+         MutableMap.<Integer, Integer>linearProbingMap().toMap();
 
    //-----------------------------------------------------------------------------------------------------------------
 

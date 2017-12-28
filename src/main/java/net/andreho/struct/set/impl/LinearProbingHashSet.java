@@ -1,5 +1,6 @@
 package net.andreho.struct.set.impl;
 
+import net.andreho.struct.Reservable;
 import net.andreho.struct.collection.ImmutableCollection;
 import net.andreho.struct.set.abstr.AbstractMutableSet;
 import net.andreho.utils.ArrayUtils;
@@ -11,16 +12,16 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import static net.andreho.utils.MathUtils.unique;
+
 /**
  * <br/>Created by andreho on 3/30/16 at 8:26 PM.<br/>
  */
-public class LinearProbingHashSet<E> extends AbstractMutableSet<E> {
+public class LinearProbingHashSet<E> extends AbstractMutableSet<E> implements Reservable {
    /**
     * Default hash value shift (to the right) for better hash distribution
     */
    private static final int DEFAULT_HASH_SHIFT = 13;
-
-   //###############################################################################
 
    /**
     * Default maximal number of collisions during collision resolution
@@ -35,14 +36,12 @@ public class LinearProbingHashSet<E> extends AbstractMutableSet<E> {
    /**
     * Default "deleted" marker hash value
     */
-   private static final int DEFAULT_DELETED_HASH =
-         MathUtils.unique(DEFAULT_EMPTY_HASH);
+   private static final int DEFAULT_DELETED_HASH = unique(DEFAULT_EMPTY_HASH);
 
    /**
     * Default "masked" hash value
     */
-   private static final int DEFAULT_MASKED_HASH =
-         MathUtils.unique(DEFAULT_EMPTY_HASH, DEFAULT_DELETED_HASH);
+   private static final int DEFAULT_MASKED_HASH = unique(DEFAULT_EMPTY_HASH, DEFAULT_DELETED_HASH);
 
    /**
     * Minimal capacity
@@ -85,6 +84,7 @@ public class LinearProbingHashSet<E> extends AbstractMutableSet<E> {
    private static final Object[] EMPTY_OBJECT_ARRAY = ArrayUtils.Constants.EMPTY_OBJECT_ARRAY;
 
    //-----------------------------------------------------------------------------------------------------------------
+
    /**
     * Current load factor
     */
@@ -93,8 +93,6 @@ public class LinearProbingHashSet<E> extends AbstractMutableSet<E> {
     * Current bit-mask for hashing
     */
    private int mask;
-
-   //----------------------------------------------------------------------------------------------------------------
    /**
     * Current maximal threshold where we need to resize
     */
@@ -157,7 +155,6 @@ public class LinearProbingHashSet<E> extends AbstractMutableSet<E> {
 
          this.hashes = new int[capacity];
          this.elements = new Object[capacity];
-
       }
       initialize(hashes, DEFAULT_EMPTY_HASH);
    }
@@ -194,8 +191,6 @@ public class LinearProbingHashSet<E> extends AbstractMutableSet<E> {
       }
    }
 
-   //----------------------------------------------------------------------------------------------------------------
-
    @Override
    public boolean equal(E a, E b) {
       return a.equals(b);
@@ -205,8 +200,6 @@ public class LinearProbingHashSet<E> extends AbstractMutableSet<E> {
    public int hashCode(E value) {
       return value.hashCode();
    }
-
-   //----------------------------------------------------------------------------------------------------------------
 
    private int nextCapacity(int cap) {
       return cap << 1;
@@ -405,28 +398,20 @@ public class LinearProbingHashSet<E> extends AbstractMutableSet<E> {
       this.deleted = 0;
    }
 
-   //----------------------------------------------------------------------------------------------------------------
-
    @SuppressWarnings("Duplicates")
    @Override
    public boolean reserve(int capacity) {
       capacity = checkCapacity(capacity);
-
       if (capacity > this.hashes.length) {
          int next = nextCapacity();
-
          while (next < capacity) {
             next = nextCapacity(next);
          }
-
          resize(next);
-
          return true;
       }
       return false;
    }
-
-   //----------------------------------------------------------------------------------------------------------------
 
    @Override
    public boolean contains(Object key) {
@@ -471,7 +456,6 @@ public class LinearProbingHashSet<E> extends AbstractMutableSet<E> {
    private boolean addInternal(int index, int hash, Object key) {
       this.hashes[index] = hash;
       this.elements[index] = key;
-
       return handleAdd();
    }
 
@@ -486,8 +470,6 @@ public class LinearProbingHashSet<E> extends AbstractMutableSet<E> {
 
       return true;
    }
-
-   //-----------------------------------------------------------------------------------------------------------------
 
    @Override
    public boolean remove(Object key) {
@@ -520,8 +502,6 @@ public class LinearProbingHashSet<E> extends AbstractMutableSet<E> {
       return true;
    }
 
-   //-----------------------------------------------------------------------------------------------------------------
-
    @Override
    public Iterator<E> iterator() {
       if (isEmpty()) {
@@ -530,16 +510,12 @@ public class LinearProbingHashSet<E> extends AbstractMutableSet<E> {
       return new LinearProbingHashSetIterator<>(this, this.hashes, this.elements);
    }
 
-   //-----------------------------------------------------------------------------------------------------------------
-
    @Override
    public void clear() {
       this.size = this.deleted = 0;
       Arrays.fill(this.hashes, DEFAULT_EMPTY_HASH);
       Arrays.fill(this.elements, null);
    }
-
-   //-----------------------------------------------------------------------------------------------------------------
 
    static final class LinearProbingHashSetIterator<E> implements Iterator<E> {
       //-------------------------------------------------------------------------------------------------------------
@@ -598,6 +574,4 @@ public class LinearProbingHashSet<E> extends AbstractMutableSet<E> {
          this.prev = -1;
       }
    }
-
-   //-----------------------------------------------------------------------------------------------------------------
 }

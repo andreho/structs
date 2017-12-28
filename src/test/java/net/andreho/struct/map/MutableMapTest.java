@@ -1,265 +1,142 @@
 package net.andreho.struct.map;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ThreadLocalRandom;
+
+import static net.andreho.struct.map.MutableMap.linearProbingMap;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Created by a.hofmann on 02.07.2016.
  */
-public class MutableMapTest {
-
-  //-----------------------------------------------------------------------------------------------------------------
-
-  private static final int AMOUNT = 1000000;
-  private static final int TO_REMOVE = (int) (AMOUNT * 0.33);
-
-  //-----------------------------------------------------------------------------------------------------------------
-
-  private List<Integer> keys = new ArrayList<>();
-
-  private Map<Integer, Integer> original = new HashMap<>();
-  private MutableMap<Integer, Integer> target = MutableMap.createDefault();
-
-  //-----------------------------------------------------------------------------------------------------------------
-
-  private void generateData(int amount,
-                            int toRemove) {
-    final ThreadLocalRandom random = ThreadLocalRandom.current();
-
-    System.out.println("Creating and storing keys ...");
-    for (int i = 0; i < amount; i++) {
-      final Integer key = random.nextInt();
-      keys.add(key);
-      original.put(key, key);
-      target.put(key, key);
-    }
-
-    for (int i = 0; i < amount; i++) {
-      final Integer key = random.nextInt();
-      keys.add(key);
-    }
-
-    System.out.println("Shuffle keys ...");
-    Collections.shuffle(keys);
-
-    long timeForOriginal = 0;
-    long timeForTarget = 0;
-
-    System.out.println("Removing some keys ... ");
-    for (int i = 0; i < toRemove; i++) {
-      int idx = random.nextInt(keys.size());
-      Integer key = keys.get(idx);
-      //keys.remove(idx);
-
-      long start = System.nanoTime();
-      Integer v1 = original.remove(key);
-      timeForOriginal += (System.nanoTime() - start);
-
-      start = System.nanoTime();
-      Integer v2 = target.remove(key);
-      timeForTarget += (System.nanoTime() - start);
-
-      Assert.assertEquals(v1, v2);
-    }
-    System.out.println("Target avg.: " + (timeForTarget / (double) toRemove));
-    System.out.println("Original avg.: " + (timeForOriginal / (double) toRemove));
-    System.out.println("-------------------------------------------------");
-  }
-
-  //-----------------------------------------------------------------------------------------------------------------
-
-  @Before
-  public void preTest() {
-    generateData(AMOUNT, TO_REMOVE);
-  }
-
-  @After
-  public void postTest() {
-    this.keys.clear();
-    this.original.clear();
-    this.target.clear();
-  }
-
-  //-----------------------------------------------------------------------------------------------------------------
-
-  @Test
-  public void get()
-  throws Exception {
-    for (Integer key : keys) {
-      boolean equals =
-        Objects.equals(original.get(key), target.get(key));
-      Assert.assertTrue(equals);
-    }
-  }
-
-  @Test
-  public void containsKey()
-  throws Exception {
-    for (Integer key : keys) {
-      boolean equals =
-        original.containsKey(key) == target.containsKey(key);
-      Assert.assertTrue(equals);
-    }
-  }
-
-  @Test
-  public void getOrDefault()
-  throws Exception {
-    for (Integer key : keys) {
-      boolean equals =
-        Objects.equals(original.getOrDefault(key, Integer.MAX_VALUE),
-                       target.getOrDefault(key, Integer.MAX_VALUE));
-      Assert.assertTrue(equals);
-    }
-  }
-
-  @Test
-  public void entryViewIterator()
-  throws Exception {
-    int count = 0;
-
-    for (MutableEntry<Integer, Integer> entry : target.entryView()) {
-      final Integer key = entry.getKey();
-      final Integer value = entry.getValue();
-
-      Assert.assertEquals(key, value);
-      Assert.assertEquals(original.get(key), value);
-      count++;
-    }
-
-    Assert.assertEquals(count, target.size());
-    Assert.assertEquals(count, original.size());
-  }
-
-
-//   @Test
-//   public void containsValue() throws Exception {
-//      for(Integer key : keys) {
-//         boolean equals =
-//               original.containsValue(key) ==
-//               target.containsValue(key);
-//         Assert.assertTrue(equals);
-//      }
-//   }
-
-  @Test
-  public void keySet()
-  throws Exception {
-
-  }
-
-  @Test
-  public void values()
-  throws Exception {
-
-  }
-
-  @Test
-  public void entryView()
-  throws Exception {
-
-  }
-
-  @Test
-  public void hashCode_test()
-  throws Exception {
-
-  }
-
-  @Test
-  public void equal()
-  throws Exception {
-
-  }
-
-  //-----------------------------------------------------------------------------------------------------------------
-
-  @Test
-  public void put()
-  throws Exception {
-
-  }
-
-  @Test
-  public void putIfAbsent()
-  throws Exception {
-
-  }
-
-  @Test
-  public void remove()
-  throws Exception {
-
-  }
-
-  @Test
-  public void remove1()
-  throws Exception {
-
-  }
-
-  @Test
-  public void replace()
-  throws Exception {
-
-  }
-
-  @Test
-  public void replace1()
-  throws Exception {
-
-  }
-
-  @Test
-  public void add()
-  throws Exception {
-
-  }
-
-  @Test
-  public void addAll()
-  throws Exception {
-
-  }
-
-  @Test
-  public void addAll1()
-  throws Exception {
-
-  }
-
-  @Test
-  public void putAll()
-  throws Exception {
-
-  }
-
-  @Test
-  public void putAll1()
-  throws Exception {
-
-  }
-
-  @Test
-  public void size()
-  throws Exception {
-    Assert.assertEquals(original.size(), target.size());
-  }
-
-  @Test
-  public void isEmpty()
-  throws Exception {
-    Assert.assertEquals(original.isEmpty(), target.isEmpty());
-  }
-
+public class MutableMapTest extends DataSets {
+   @ParameterizedTest(name = "#{index}")
+   @MethodSource({ONE,FIVE,TEN,HUNDRED,THOUSAND,TEN_THOUSAND})
+   void get(final List<Integer> integers) {
+      final Map<Integer, Integer> hashMap = fillMap(new HashMap<>(), integers);
+      final MutableMap<Integer, Integer> map = fillMap(linearProbingMap(), integers);
+
+      for(Integer key : integers) {
+         assertEquals(key, map.get(key));
+         assertEquals(key, hashMap.get(key));
+      }
+
+      assertEquals(map.getDefaultValue(), map.get(findNotPresent(hashMap)));
+   }
+
+   @ParameterizedTest(name = "#{index}")
+   @MethodSource({ONE,FIVE,TEN,HUNDRED,THOUSAND,TEN_THOUSAND})
+   void getOrDefault(final List<Integer> integers) {
+      final Map<Integer, Integer> hashMap = fillMap(new HashMap<>(), integers);
+      final MutableMap<Integer, Integer> map = fillMap(linearProbingMap(), integers);
+
+      for(Integer key : integers) {
+         assertEquals(key, map.getOrDefault(key, 0));
+         assertEquals(key, hashMap.getOrDefault(key, 0));
+      }
+
+      assertEquals(0, map.getOrDefault(findNotPresent(hashMap), 0).intValue());
+   }
+
+   @ParameterizedTest(name = "#{index}")
+   @MethodSource({ONE,FIVE,TEN,HUNDRED,THOUSAND,TEN_THOUSAND})
+   void containsKey(final List<Integer> integers) {
+      final Map<Integer, Integer> hashMap = fillMap(new HashMap<>(), integers);
+      final MutableMap<Integer, Integer> map = fillMap(linearProbingMap(), integers);
+
+      for(Integer key : integers) {
+         assertEquals(hashMap.containsKey(key), map.containsKey(key));
+      }
+
+      assertFalse(map.containsKey(findNotPresent(hashMap)));
+   }
+
+   @ParameterizedTest(name = "#{index}")
+   @MethodSource({ONE,FIVE,TEN,HUNDRED,THOUSAND,TEN_THOUSAND})
+   void containsValue(final List<Integer> integers) {
+      final Map<Integer, Integer> hashMap = fillMap(new HashMap<>(), integers);
+      final MutableMap<Integer, Integer> map = fillMap(linearProbingMap(), integers);
+
+      for(Integer key : integers) {
+         assertEquals(hashMap.containsValue(key), map.containsValue(key));
+      }
+
+      assertFalse(map.containsValue(findNotPresent(hashMap)));
+   }
+
+   @ParameterizedTest(name = "#{index}")
+   @MethodSource({ONE,FIVE,TEN,HUNDRED,THOUSAND,TEN_THOUSAND})
+   void keySetContainsAll(final List<Integer> integers) {
+      MutableMap<Integer, Integer> map = fillMap(linearProbingMap(), integers);
+      assertTrue(map.keySet().containsAll(integers));
+   }
+
+   @ParameterizedTest(name = "#{index}")
+   @MethodSource({ONE,FIVE,TEN,HUNDRED,THOUSAND,TEN_THOUSAND})
+   void valuesContainsAll(final List<Integer> integers) {
+      MutableMap<Integer, Integer> map = fillMap(linearProbingMap(), integers);
+      assertTrue(map.values().containsAll(integers));
+   }
+
+   @ParameterizedTest(name = "#{index}")
+   @MethodSource({ONE,FIVE,TEN,HUNDRED,THOUSAND,TEN_THOUSAND})
+   void entrySetContainsAll(final List<Integer> integers) {
+      final Map<Integer, Integer> hashMap = fillMap(new HashMap<>(), integers);
+      final MutableMap<Integer, Integer> map = fillMap(linearProbingMap(), integers);
+
+      assertTrue(map.toMap().entrySet().containsAll(hashMap.entrySet()));
+      assertTrue(hashMap.entrySet().containsAll(map.toMap().entrySet()));
+   }
+
+   @ParameterizedTest(name = "#{index}")
+   @MethodSource({ONE,FIVE,TEN,HUNDRED,THOUSAND,TEN_THOUSAND})
+   void equals(final List<Integer> integers) {
+      final Map<Integer, Integer> hashMap = fillMap(new HashMap<>(), integers);
+      final MutableMap<Integer, Integer> map = fillMap(linearProbingMap(), integers);
+
+      assertEquals(hashMap, map.toMap());
+      assertEquals(map.toMap(), hashMap);
+   }
+
+   @ParameterizedTest(name = "#{index}")
+   @MethodSource({ONE,FIVE,TEN,HUNDRED,THOUSAND,TEN_THOUSAND})
+   void hashCode(final List<Integer> integers) {
+      final Map<Integer, Integer> hashMap = fillMap(new HashMap<>(), integers);
+      final MutableMap<Integer, Integer> map = fillMap(linearProbingMap(), integers);
+
+      int expected = hashMap.hashCode();
+      int actual = map.toMap().hashCode();
+
+      assertEquals(expected, actual);
+   }
+
+   private static MutableMap<Integer, Integer> fillMap(final MutableMap<Integer, Integer> map, final Collection<Integer> integers) {
+      for (Integer integer : integers) {
+         map.put(integer, integer);
+      }
+      return map;
+   }
+
+   private static Map<Integer, Integer> fillMap(final Map<Integer, Integer> map, final Collection<Integer> integers) {
+      for (Integer integer : integers) {
+         map.put(integer, integer);
+      }
+      return map;
+   }
+
+   private static Integer findNotPresent(final Map<Integer, Integer> map) {
+      for(int key = 0; key < Integer.MAX_VALUE; key++) {
+         if(!map.containsKey(key)) {
+            return key;
+         }
+      }
+      return Integer.MIN_VALUE;
+   }
 }

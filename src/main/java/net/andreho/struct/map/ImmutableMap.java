@@ -1,17 +1,26 @@
 package net.andreho.struct.map;
 
+import net.andreho.struct.DefaultValueProvider;
+import net.andreho.struct.EqualityAndHashCodeStrategyAware;
+import net.andreho.struct.EqualityStrategy;
+import net.andreho.struct.HashCodeStrategy;
 import net.andreho.struct.Measurable;
 import net.andreho.struct.Structure;
 import net.andreho.struct.collection.ImmutableCollection;
 import net.andreho.struct.set.ImmutableSet;
 
 import java.util.Iterator;
-import java.util.Objects;
 
 /**
  * <br/>Created by a.hofmann on 22.01.2016.<br/>
  */
-public interface ImmutableMap<K, V> extends Structure, Measurable, Iterable<ImmutableEntry<K, V>> {
+public interface ImmutableMap<K, V> extends
+   Structure,
+   Measurable,
+   Iterable<ImmutableEntry<K, V>>,
+   DefaultValueProvider<V>,
+   EqualityAndHashCodeStrategyAware<K> {
+
    /**
     * @param key
     * @return
@@ -25,34 +34,10 @@ public interface ImmutableMap<K, V> extends Structure, Measurable, Iterable<Immu
    boolean containsKey(Object key);
 
    /**
-    * @return
-    */
-   V getDefaultValue();
-
-   /**
     * @param key
     * @return
     */
    V getOrDefault(Object key, V defaultValue);
-
-   /**
-    * Important: <b>null</b> key is not allowed.
-    *
-    * @param key
-    * @return
-    */
-   default int hashCode(K key) {
-      return Objects.hashCode(key);
-   }
-
-   /**
-    * @param a one of two parameters
-    * @param b one of two parameters
-    * @return
-    */
-   default boolean equal(K a, K b) {
-      return Objects.equals(a, b);
-   }
 
    /**
     * @param value to search for
@@ -80,5 +65,34 @@ public interface ImmutableMap<K, V> extends Structure, Measurable, Iterable<Immu
    @Override
    default Iterator<ImmutableEntry<K, V>> iterator() {
       return (Iterator<ImmutableEntry<K, V>>) entryView().iterator();
+   }
+
+   //-----------------------------------------------------------------------------------------------------------------
+
+   /**
+    * @param key
+    * @return
+    */
+   default int hashCode(K key) {
+      return hashCodeStrategy().hashCode(key);
+   }
+
+   /**
+    * @param firstKey
+    * @param secondKey
+    * @return
+    */
+   default boolean equal(K firstKey, K secondKey) {
+      return equalityStrategy().equal(firstKey, secondKey);
+   }
+
+   @Override
+   default EqualityStrategy<K> equalityStrategy() {
+      return EqualityStrategy.defaultEquality();
+   }
+
+   @Override
+   default HashCodeStrategy<K> hashCodeStrategy() {
+      return HashCodeStrategy.defaultHashcode();
    }
 }

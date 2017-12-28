@@ -7,17 +7,14 @@ import net.andreho.struct.map.MutableMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * <br/>Created by a.hofmann on 24.01.2016.<br/>
  */
 public abstract class AbstractMutableMap<K, V> implements MutableMap<K, V>, Map<K, V> {
 
-   //----------------------------------------------------------------------------------------------------------------
-
    protected int size;
-
-   //----------------------------------------------------------------------------------------------------------------
 
    @Override
    public int size() {
@@ -29,10 +26,13 @@ public abstract class AbstractMutableMap<K, V> implements MutableMap<K, V>, Map<
       return size == 0;
    }
 
-   //-----------------------------------------------------------------------------------------------------------------
-
    @Override
    public V getDefaultValue() {
+      return null;
+   }
+
+   @Override
+   public Iterable<MutableEntry<K, V>> entryView() {
       return null;
    }
 
@@ -94,24 +94,32 @@ public abstract class AbstractMutableMap<K, V> implements MutableMap<K, V>, Map<
       }
    }
 
-   //-----------------------------------------------------------------------------------------------------------------
+   @Override
+   public Map<K, V> toMap() {
+      return null;
+   }
+
+   @Override
+   public Set<Entry<K, V>> entrySet() {
+      return null;
+   }
 
    @Override
    public boolean equals(Object obj) {
       if (obj == this) {
          return true;
       }
-
       if (!(obj instanceof ImmutableMap)) {
+         if(obj instanceof Map) {
+            return equalsToMap((Map)obj);
+         }
          return false;
       }
-
       ImmutableMap m = (ImmutableMap) obj;
 
-      if (m.size() != size()) {
+      if (size() != m.size()) {
          return false;
       }
-
       try {
          for (final MutableEntry<K, V> entry : entryView()) {
             final Object key = entry.getKey();
@@ -127,20 +135,39 @@ public abstract class AbstractMutableMap<K, V> implements MutableMap<K, V>, Map<
       } catch (ClassCastException | NullPointerException unused) {
          return false;
       }
+      return true;
+   }
 
+   private boolean equalsToMap(final Map<K,V> m) {
+      if (size() != m.size()) {
+         return false;
+      }
+      try {
+         for (final MutableEntry<K, V> entry : entryView()) {
+            final K key = entry.getKey();
+            final V value = entry.getValue();
+
+            if (value == null) {
+               if (!(m.get(key) == null && m.containsKey(key))) {
+                  return false;
+               }
+            } else if (!value.equals(m.get(key))) {
+               return false;
+            }
+         }
+      } catch (ClassCastException | NullPointerException unused) {
+         return false;
+      }
       return true;
    }
 
    @Override
    public int hashCode() {
-      Iterator<? extends MutableEntry<K, V>> i = entryView().iterator();
-
       int h = 0;
-
+      Iterator<? extends MutableEntry<K, V>> i = entryView().iterator();
       while (i.hasNext()) {
-         h += hashCode(i.next().getKey());
+         h += i.next().hashCode();
       }
-
       return h;
    }
 }

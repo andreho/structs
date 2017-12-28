@@ -1,15 +1,16 @@
 package net.andreho.struct.collection;
 
 import net.andreho.struct.Measurable;
-import net.andreho.struct.Reservable;
 import net.andreho.struct.Structure;
 
 import java.lang.reflect.Array;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * <br/>Created by a.hofmann on 22.01.2016.<br/>
  */
-public interface ImmutableCollection<E> extends Measurable, Structure, Reservable, Iterable<E> {
+public interface ImmutableCollection<E> extends Measurable, Structure, Iterable<E> {
    /**
     * @param e
     * @return
@@ -20,13 +21,29 @@ public interface ImmutableCollection<E> extends Measurable, Structure, Reservabl
     * @param values
     * @return
     */
-   boolean containsAll(Object... values);
+   default boolean containsAll(Object... values) {
+      requireNonNull(values, "Given array is null.");
+      for (Object elem : values) {
+         if (!contains(elem)) {
+            return false;
+         }
+      }
+      return true;
+   }
 
    /**
     * @param iterable
     * @return
     */
-   boolean containsAll(Iterable<?> iterable);
+   default boolean containsAll(Iterable<?> iterable) {
+      requireNonNull(iterable, "Given iterable is null.");
+      for (Object elem : iterable) {
+         if (!contains(elem)) {
+            return false;
+         }
+      }
+      return true;
+   }
 
    /**
     * @param type of the array to create

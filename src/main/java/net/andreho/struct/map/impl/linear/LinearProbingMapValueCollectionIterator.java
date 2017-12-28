@@ -7,14 +7,12 @@ import java.util.NoSuchElementException;
  * <br/>Created by a.hofmann on 09.04.2017 at 23:55.
  */
 final class LinearProbingMapValueCollectionIterator<V> implements Iterator<V> {
-   private final int[] hashes;
-   private final Object[] values;
+   private final LinearProbingHashMap<?, V> map;
    private int index;
 
-   LinearProbingMapValueCollectionIterator(final int[] hashes, final Object[] values) {
-      this.hashes = hashes;
-      this.values = values;
-      this.index = LinearProbingHashMap.findNext(hashes, 0, 0);
+   LinearProbingMapValueCollectionIterator(final LinearProbingHashMap<?,V> map) {
+      this.map = map;
+      this.index = LinearProbingHashMap.findNext(map.hashes, 0, 0);
    }
 
    @Override
@@ -28,8 +26,8 @@ final class LinearProbingMapValueCollectionIterator<V> implements Iterator<V> {
          throw new NoSuchElementException();
       }
       int index = this.index;
-      V value = (V) this.values[index];
-      this.index = LinearProbingHashMap.findNext(this.hashes, index, 0);
+      V value = (V) this.map.values[index];
+      this.index = LinearProbingHashMap.findNext(this.map.hashes, index, 1);
       return value;
    }
 }

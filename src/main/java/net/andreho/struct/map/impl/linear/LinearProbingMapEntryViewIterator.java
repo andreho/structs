@@ -4,7 +4,12 @@ import net.andreho.struct.map.MutableEntry;
 import net.andreho.struct.map.impl.MutableEntryImpl;
 
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
+import static net.andreho.struct.map.impl.linear.LinearProbingHashMap.findNext;
 
 /**
  * <br/>Created by a.hofmann on 09.04.2017 at 23:56.
@@ -13,19 +18,19 @@ final class LinearProbingMapEntryViewIterator<K, V> implements Iterator<MutableE
    final LinearProbingHashMap<K, V> map;
 
    private final boolean asView;
-   private final int[] hashes;
-   private final Object[] keys;
-   private final Object[] values;
-   private int prev = -1;
+   private int prev;
    private int index;
 
+   LinearProbingMapEntryViewIterator(final LinearProbingHashMap<K, V> map) {
+      this(map, false);
+   }
+
    LinearProbingMapEntryViewIterator(final LinearProbingHashMap<K, V> map, final boolean asView) {
+      requireNonNull(map, "Given delegate-map can't be null.");
       this.map = map;
-      this.hashes = map.hashes;
-      this.keys = map.keys;
-      this.values = map.values;
       this.asView = asView;
-      this.index = LinearProbingHashMap.findNext(hashes, 0, 0);
+      this.index = findNext(map.hashes, 0, 0);
+      this.prev = -1;
    }
 
    @Override
@@ -38,15 +43,26 @@ final class LinearProbingMapEntryViewIterator<K, V> implements Iterator<MutableE
       if (!hasNext()) {
          throw new NoSuchElementException();
       }
-      MutableEntry<K, V> entry = this;
-      if (!this.asView) {
-         entry = new MutableEntryImpl<>(this.map, this.hashCode(), this.getKey(), this.getValue());
-      }
 
       int index = this.index;
       this.prev = index;
-      this.index = LinearProbingHashMap.findNext(hashes, index, 1);
-      return entry;
+      this.index = findNext(this.map.hashes, index, 1);
+
+      if (this.asView) {
+         return this;
+      }
+
+      return new MutableEntryImpl<K,V>(this.map, getKeyHashCode(), getKey(), getValue()) {
+         @Override
+         public V setValue(final V value) {
+            LinearProbingMapEntryViewIterator.this.setValue(value);
+            return super.setValue(value);
+         }
+      };
+   }
+
+   private int getKeyHashCode() {
+      return this.map.hashes[this.prev];
    }
 
    @Override
@@ -58,40 +74,38 @@ final class LinearProbingMapEntryViewIterator<K, V> implements Iterator<MutableE
       this.prev = -1;
    }
 
-   //-------------------------------------------------------------------------------------------------------------
-
    @Override
    public K getKey() {
-      return (K) this.keys[this.index];
+      return (K) this.map.keys[this.prev];
    }
 
    @Override
    public V getValue() {
-      return (V) this.values[this.index];
+      return (V) this.map.values[this.prev];
    }
 
    @Override
-   public void setValue(V value) {
-      this.values[this.index] = value;
+   public V setValue(V value) {
+      final Object old = this.map.values[this.prev];
+      this.map.values[this.prev] = value;
+      return (V) old;
    }
-
-   //-------------------------------------------------------------------------------------------------------------
 
    @Override
    public boolean equals(Object o) {
       if (this == o) {
          return true;
       }
-      if (!(o instanceof MutableEntry)) {
+      if (!(o instanceof Map.Entry)) {
          return false;
       }
-
-      MutableEntry<K, ?> that = (MutableEntry<K, ?>) o;
-      return this.map.equal(getKey(), that.getKey());
+      Map.Entry<K, ?> that = (Map.Entry<K, ?>) o;
+      return this.map.equal(getKey(), that.getKey()) &&
+         Objects.equals(getValue(), that.getValue());
    }
 
    @Override
    public int hashCode() {
-      return this.hashes[this.index];
+      return getKeyHashCode() ^ Objects.hashCode(getValue());
    }
 }

@@ -10,27 +10,18 @@ import java.util.Iterator;
 final class LinearProbingMapValueCollection<V> extends AbstractMutableCollection<V> {
    private final LinearProbingHashMap<?, V> map;
 
-   //-------------------------------------------------------------------------------------------------------------
-
    LinearProbingMapValueCollection(LinearProbingHashMap<?, V> immutableEntries) {
       super();
       this.map = immutableEntries;
    }
 
-   //-------------------------------------------------------------------------------------------------------------
-
    @Override
    public Iterator<V> iterator() {
-      return new LinearProbingMapValueCollectionIterator(map.hashes, map.values);
+      return new LinearProbingMapValueCollectionIterator<>(map);
    }
 
    @Override
    public int size() {
       return map.size();
-   }
-
-   @Override
-   public boolean reserve(int capacity) {
-      return false;
    }
 }
